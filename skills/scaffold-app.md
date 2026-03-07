@@ -1,10 +1,16 @@
 # Skill: scaffold-app
 
-Scaffold a new frontend application using the canonical stack: React + TypeScript (strict) + Vite + TanStack Router + TanStack Query + Tailwind + shadcn/ui + Vitest.
+Scaffold a frontend application using the canonical stack: React + TypeScript (strict) + Vite + TanStack Router + TanStack Query + Tailwind + shadcn/ui + Vitest.
+
+Works in two modes depending on context:
+
+**Standalone** — run from any directory without a `turbo.json`. Creates a self-contained project at `./<name>`.
+
+**Monorepo** — run from a Turborepo root (`turbo.json` + `pnpm-workspace.yaml` present). Creates `apps/<name>` with tsconfig extending `packages/typescript-config` and `packages/ui` as a workspace dependency.
 
 ## Trigger
 
-User runs `/scaffold-app` or asks to scaffold / create a new frontend app.
+User runs `/scaffold-app` or asks to scaffold / create a new frontend app. Also called by the scaffold-monorepo skill to add an initial app.
 
 ## Step 1 — Get the Project Name
 
@@ -12,12 +18,20 @@ If the user didn't provide a project name, ask for one before proceeding. All ot
 
 ## Step 2 — Run the Scaffold Script
 
-Run the boilerplate script from this skills directory. It creates the Vite project, strict TypeScript config, folder structure, and config file stubs. It does not install stack-specific packages.
+Run the script from the appropriate location:
+
+- **Standalone:** run from the parent directory where the project should be created
+- **Monorepo:** run from the monorepo root
 
 ```bash
 bash <path-to-skills>/scripts/scaffold-app.sh <project-name>
-cd <project-name>
 ```
+
+The script detects monorepo context automatically. In standalone mode it creates `./<name>` and `cd`s into it. In monorepo mode it creates `apps/<name>`.
+
+After the script, `cd` to the app directory:
+- Standalone: `cd <project-name>`
+- Monorepo: `cd apps/<project-name>`
 
 ## Step 3 — Fetch Current Package Versions
 
@@ -35,57 +49,66 @@ npm show lucide-react version
 
 ## Step 4 — Install Stack Packages
 
-Install with the resolved versions. Use pnpm.
-
 **Dependencies:**
-- `@tanstack/react-router`
-- `@tanstack/react-query`
-- `@tanstack/react-query-devtools`
-- `zod`
-- `lucide-react`
-- `clsx`
-- `tailwind-merge`
+```bash
+pnpm add \
+  @tanstack/react-router@<resolved-version> \
+  @tanstack/react-query@<resolved-version> \
+  @tanstack/react-query-devtools@<resolved-version> \
+  zod@<resolved-version> \
+  lucide-react@<resolved-version> \
+  clsx \
+  tailwind-merge
+```
 
 **Dev dependencies:**
-- `@tanstack/router-plugin` (Vite plugin for file-based routing)
-- `tailwindcss`
-- `@tailwindcss/vite`
-- `vitest`
-- `@vitest/ui`
-- `@testing-library/react`
-- `@testing-library/user-event`
-- `jsdom`
+```bash
+pnpm add -D \
+  @tanstack/router-plugin@<resolved-version> \
+  tailwindcss@<resolved-version> \
+  @tailwindcss/vite \
+  vitest \
+  @vitest/ui \
+  @testing-library/react \
+  @testing-library/user-event \
+  @testing-library/jest-dom \
+  jsdom
+```
 
 ## Step 5 — Initialize shadcn/ui
 
-Fetch the current shadcn init command from https://ui.shadcn.com/docs/installation/vite and run it. Use the `default` style, CSS variables on, no Tailwind prefix. Accept all defaults.
+Fetch the current shadcn init command from https://ui.shadcn.com/docs/installation/vite and run it. Use the `default` style, CSS variables on, no Tailwind prefix.
+
+**Standalone:** accept the default components path (`src/components/ui`).
+
+**Monorepo:** set the components path to `../../packages/ui/src/components` so shadcn components land in the shared package, not the app.
 
 Install a baseline set of components:
+
 ```bash
 pnpm dlx shadcn@latest add button card input label badge separator
 ```
 
+**Monorepo only:** after installing, update `packages/ui/src/index.ts` to re-export every installed component. The consuming app imports from `@<scope>/ui`, not directly from shadcn.
+
 ## Step 6 — Configure the Stack
 
-Apply these configurations to the scaffolded project:
-
 ### vite.config.ts
-Add `@tanstack/router-plugin/vite` to the plugins array before the React plugin.
 
 ```ts
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [TanStackRouterVite(), react()],
+  plugins: [TanStackRouterVite(), react(), tailwindcss()],
   resolve: { alias: { '@': path.resolve(__dirname, './src') } },
 })
 ```
 
 ### src/routes/__root.tsx
-Create the root route with a QueryClientProvider wrapping the outlet:
 
 ```tsx
 import { createRootRoute, Outlet } from '@tanstack/react-router'
@@ -105,7 +128,6 @@ export const Route = createRootRoute({
 ```
 
 ### src/routes/index.tsx
-Create a minimal index route so the app renders:
 
 ```tsx
 import { createFileRoute } from '@tanstack/react-router'
@@ -120,7 +142,6 @@ function Index() {
 ```
 
 ### src/main.tsx
-Wire up TanStack Router with the generated routeTree:
 
 ```tsx
 import { StrictMode } from 'react'
@@ -143,7 +164,6 @@ createRoot(document.getElementById('root')!).render(
 ```
 
 ### src/lib/queryKeys.ts
-Create an empty query keys registry:
 
 ```ts
 // Central registry for all TanStack Query keys.
@@ -151,7 +171,6 @@ Create an empty query keys registry:
 ```
 
 ### src/lib/api.ts
-Create a typed fetch wrapper:
 
 ```ts
 const BASE_URL = import.meta.env.VITE_API_URL ?? ''
@@ -176,7 +195,6 @@ export const api = {
 ```
 
 ### vitest.config.ts
-Create alongside vite.config.ts:
 
 ```ts
 import { defineConfig } from 'vitest/config'
@@ -192,26 +210,24 @@ export default defineConfig({
 })
 ```
 
-Create `src/test/setup.ts`:
-
-```ts
-import '@testing-library/jest-dom'
-```
-
-Install `@testing-library/jest-dom` as a dev dependency.
-
 ## Step 7 — Verify
 
+**Standalone:**
 ```bash
-pnpm run build
+pnpm build
 ```
 
-Build must pass before the skill is complete. If it fails, fix the errors — do not report success until the build is clean.
+**Monorepo** (run from repo root):
+```bash
+turbo build
+```
+
+Build must pass before the skill is complete. Fix any errors — do not report success until the build is clean.
 
 ## Step 8 — Report
 
 Tell the user:
-- Project location
-- How to start the dev server (`pnpm dev`)
-- How to run tests (`pnpm test`)
+- App location
+- How to start the dev server (`pnpm dev` standalone, `pnpm --filter <name> dev` in monorepo)
+- How to run tests (`pnpm test` standalone, `turbo test` in monorepo)
 - The folder structure created
