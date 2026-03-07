@@ -51,7 +51,9 @@ cat > package.json <<EOF
     "dev": "turbo dev",
     "test": "turbo test",
     "typecheck": "turbo typecheck",
-    "lint": "turbo lint"
+    "lint": "turbo lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {}
 }
@@ -113,6 +115,28 @@ out
 # Editor
 .DS_Store
 *.pem
+EOF
+
+# ── Prettier ──────────────────────────────────────────────────────────────────
+
+cat > .prettierrc <<'EOF'
+{
+  "semi": false,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "es5",
+  "printWidth": 100
+}
+EOF
+
+cat > .prettierignore <<'EOF'
+node_modules
+dist
+.next
+out
+.turbo
+pnpm-lock.yaml
+routeTree.gen.ts
 EOF
 
 # ── packages/typescript-config ────────────────────────────────────────────────
@@ -205,13 +229,16 @@ cat > packages/ui/package.json <<EOF
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
   },
   "peerDependencies": {
     "react": "*",
     "react-dom": "*"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "${SCOPE}/eslint-config": "workspace:*"
+  }
 }
 EOF
 
@@ -247,6 +274,71 @@ cat > packages/ui/src/index.ts <<'EOF'
 // Example: export { Button } from './components/button'
 EOF
 
+cat > packages/ui/eslint.config.js <<EOF
+// @ts-check
+import reactConfig from '${SCOPE}/eslint-config/react'
+
+/** @type {import('eslint').Linter.Config[]} */
+export default [
+  { ignores: ['dist/**'] },
+  ...reactConfig,
+]
+EOF
+
+# ── packages/eslint-config ────────────────────────────────────────────────────
+
+echo "→ Creating packages/eslint-config"
+
+mkdir -p packages/eslint-config
+
+cat > packages/eslint-config/package.json <<EOF
+{
+  "name": "${SCOPE}/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./base": "./base.js",
+    "./react": "./react.js"
+  },
+  "dependencies": {}
+}
+EOF
+
+cat > packages/eslint-config/base.js <<'EOF'
+// @ts-check
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
+
+/** @type {import('typescript-eslint').ConfigArray} */
+export default [
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+]
+EOF
+
+cat > packages/eslint-config/react.js <<'EOF'
+// @ts-check
+import reactPlugin from 'eslint-plugin-react'
+import hooksPlugin from 'eslint-plugin-react-hooks'
+import prettierConfig from 'eslint-config-prettier'
+import baseConfig from './base.js'
+
+/** @type {import('typescript-eslint').ConfigArray} */
+export default [
+  ...baseConfig,
+  {
+    ...reactPlugin.configs.flat.recommended,
+    settings: { react: { version: 'detect' } },
+  },
+  {
+    plugins: { 'react-hooks': hooksPlugin },
+    rules: hooksPlugin.configs.recommended.rules,
+  },
+  prettierConfig,
+]
+EOF
+
 # ── Done ──────────────────────────────────────────────────────────────────────
 
 echo ""
@@ -255,5 +347,6 @@ echo ""
 echo "  Packages:"
 echo "    packages/ui                  — shared component library"
 echo "    packages/typescript-config   — shared tsconfig bases"
+echo "    packages/eslint-config       — shared ESLint configs"
 echo ""
 echo "  Next: run scaffold-app.sh from the monorepo root to add your first app."

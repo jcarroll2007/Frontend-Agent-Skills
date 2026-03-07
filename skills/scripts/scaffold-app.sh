@@ -173,10 +173,30 @@ pkg.scripts = {
   typecheck: 'tsc --noEmit',
   test: 'vitest run',
   'test:watch': 'vitest',
+  lint: 'eslint .',
 };
 pkg.dependencies = {
   ...pkg.dependencies,
   '@${SCOPE}/ui': 'workspace:*',
+};
+pkg.devDependencies = {
+  ...pkg.devDependencies,
+  '@${SCOPE}/eslint-config': 'workspace:*',
+};
+fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+"
+else
+  node -e "
+const fs = require('fs');
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+pkg.scripts = {
+  ...pkg.scripts,
+  typecheck: 'tsc --noEmit',
+  test: 'vitest run',
+  'test:watch': 'vitest',
+  lint: 'eslint .',
+  format: 'prettier --write .',
+  'format:check': 'prettier --check .',
 };
 fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
 "
@@ -324,6 +344,67 @@ EOF
 cat > .env.example <<'EOF'
 VITE_API_URL=http://localhost:3000
 EOF
+
+# ── ESLint config ────────────────────────────────────────────────────────────
+
+if [ "$IS_MONOREPO" = true ]; then
+  cat > eslint.config.js <<EOF
+// @ts-check
+import reactConfig from '@${SCOPE}/eslint-config/react'
+
+/** @type {import('eslint').Linter.Config[]} */
+export default [
+  { ignores: ['dist/**', 'routeTree.gen.ts'] },
+  ...reactConfig,
+]
+EOF
+else
+  cat > eslint.config.js <<'EOF'
+// @ts-check
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import reactPlugin from 'eslint-plugin-react'
+import hooksPlugin from 'eslint-plugin-react-hooks'
+import prettierConfig from 'eslint-config-prettier'
+
+/** @type {import('typescript-eslint').ConfigArray} */
+export default [
+  { ignores: ['dist/**', 'routeTree.gen.ts'] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    ...reactPlugin.configs.flat.recommended,
+    settings: { react: { version: 'detect' } },
+  },
+  {
+    plugins: { 'react-hooks': hooksPlugin },
+    rules: hooksPlugin.configs.recommended.rules,
+  },
+  prettierConfig,
+]
+EOF
+fi
+
+# ── Prettier (standalone only — monorepo root owns .prettierrc) ───────────────
+
+if [ "$IS_MONOREPO" = false ]; then
+  cat > .prettierrc <<'EOF'
+{
+  "semi": false,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "es5",
+  "printWidth": 100
+}
+EOF
+
+  cat > .prettierignore <<'EOF'
+node_modules
+dist
+pnpm-lock.yaml
+routeTree.gen.ts
+EOF
+fi
 
 # ── .gitignore (standalone only — monorepo root owns .gitignore) ───────────────
 

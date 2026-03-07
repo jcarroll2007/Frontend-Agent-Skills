@@ -51,33 +51,55 @@ Update root `package.json`:
 "packageManager": "pnpm@<resolved-version>"
 ```
 
-## Step 5 — Install Root Dev Dependencies
+## Step 5 — Fetch Additional Versions
 
 ```bash
-pnpm add -D -w turbo@<resolved-version>
+npm show eslint version
+npm show typescript-eslint version
+npm show @eslint/js version
+npm show eslint-plugin-react version
+npm show eslint-plugin-react-hooks version
+npm show eslint-config-prettier version
+npm show prettier version
+npm show tsup version
 ```
 
-## Step 6 — Install packages/ui Dev Dependencies
+## Step 6 — Install Root Dev Dependencies
+
+```bash
+pnpm add -D -w turbo@<resolved-version> prettier@<resolved-version>
+```
+
+## Step 7 — Install packages/eslint-config Dependencies
+
+```bash
+cd packages/eslint-config
+pnpm add eslint@<resolved-version> @eslint/js@<resolved-version> typescript-eslint@<resolved-version> eslint-plugin-react@<resolved-version> eslint-plugin-react-hooks@<resolved-version> eslint-config-prettier@<resolved-version>
+cd ../..
+```
+
+## Step 8 — Install packages/ui Dev Dependencies
 
 ```bash
 cd packages/ui
-pnpm add -D tsup@<resolved-version> typescript react react-dom @types/react @types/react-dom
+pnpm add -D tsup@<resolved-version> typescript eslint@<resolved-version> react react-dom @types/react @types/react-dom
 pnpm add tailwind-merge clsx
 cd ../..
 ```
 
-## Step 7 — Add the Initial App
+## Step 9 — Add the Initial App
 
 Run the scaffold-app skill from the monorepo root, passing the initial app name. The script detects the monorepo context automatically.
 
 The scaffold-app skill will:
 - Create `apps/<app-name>` with tsconfig extending `@<scope>/typescript-config`
-- Add `@<scope>/ui` as a workspace dependency
-- Install TanStack Router + Query, Tailwind, Vitest
+- Add `@<scope>/ui` and `@<scope>/eslint-config` as workspace dependencies
+- Install TanStack Router + Query, Tailwind, Vitest, and ESLint
+- Write `eslint.config.js` extending `@<scope>/eslint-config/react`
 - Initialize shadcn/ui with components landing in `packages/ui/src/components`
-- Verify with `turbo build`
+- Verify with `turbo build` and `turbo lint`
 
-## Step 8 — shadcn/ui Component Installation
+## Step 10 — shadcn/ui Component Installation
 
 When scaffold-app runs its shadcn init step inside a monorepo, direct components to `packages/ui/src/components` (not the app's own src). After init, install the baseline set:
 
@@ -98,22 +120,25 @@ export { Badge } from './components/badge'
 export { Separator } from './components/separator'
 ```
 
-## Step 9 — Verify
+## Step 11 — Verify
 
 From the monorepo root:
 
 ```bash
 turbo build
+turbo lint
 ```
 
-Build must pass for all workspaces. Fix any errors before reporting success.
+Both must pass for all workspaces. Fix any errors before reporting success.
 
-## Step 10 — Report
+## Step 12 — Report
 
 Tell the user:
 - Repo location and workspace layout
 - `pnpm --filter <app-name> dev` to start the dev server
 - `turbo test` to run all tests
 - `turbo build` to build all workspaces
+- `turbo lint` to lint all workspaces
+- `pnpm format` to format everything with Prettier
 - To add more apps: run `/scaffold-app <name>` from the monorepo root
 - shadcn components go in `packages/ui/src/components` and must be re-exported from `packages/ui/src/index.ts`

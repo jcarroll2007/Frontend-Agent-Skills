@@ -45,6 +45,13 @@ npm show @tanstack/react-query-devtools version
 npm show tailwindcss version
 npm show zod version
 npm show lucide-react version
+npm show eslint version
+npm show typescript-eslint version
+npm show @eslint/js version
+npm show eslint-plugin-react version
+npm show eslint-plugin-react-hooks version
+npm show eslint-config-prettier version
+npm show prettier version
 ```
 
 ## Step 4 — Install Stack Packages
@@ -61,7 +68,7 @@ pnpm add \
   tailwind-merge
 ```
 
-**Dev dependencies:**
+**Dev dependencies (all modes):**
 ```bash
 pnpm add -D \
   @tanstack/router-plugin@<resolved-version> \
@@ -72,7 +79,19 @@ pnpm add -D \
   @testing-library/react \
   @testing-library/user-event \
   @testing-library/jest-dom \
-  jsdom
+  jsdom \
+  eslint@<resolved-version>
+```
+
+**Standalone only** — ESLint plugins (in monorepo these come from `packages/eslint-config`):
+```bash
+pnpm add -D \
+  @eslint/js@<resolved-version> \
+  typescript-eslint@<resolved-version> \
+  eslint-plugin-react@<resolved-version> \
+  eslint-plugin-react-hooks@<resolved-version> \
+  eslint-config-prettier@<resolved-version> \
+  prettier@<resolved-version>
 ```
 
 ## Step 5 — Initialize shadcn/ui
@@ -215,14 +234,16 @@ export default defineConfig({
 **Standalone:**
 ```bash
 pnpm build
+pnpm lint
 ```
 
 **Monorepo** (run from repo root):
 ```bash
 turbo build
+turbo lint
 ```
 
-Build must pass before the skill is complete. Fix any errors — do not report success until the build is clean.
+Both must pass before the skill is complete. Fix any errors — do not report success until build and lint are clean.
 
 ## Step 8 — Report
 
@@ -230,4 +251,6 @@ Tell the user:
 - App location
 - How to start the dev server (`pnpm dev` standalone, `pnpm --filter <name> dev` in monorepo)
 - How to run tests (`pnpm test` standalone, `turbo test` in monorepo)
+- How to lint (`pnpm lint` standalone, `turbo lint` in monorepo)
+- How to format (`pnpm format` from any root)
 - The folder structure created
