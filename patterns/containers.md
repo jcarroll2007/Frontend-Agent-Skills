@@ -112,6 +112,59 @@ When a container renders rows, cards, or items that are themselves containers, a
 
 This avoids coupling containers to each other and keeps the composition visible at the view level.
 
+## Testing
+
+Test containers using [Mock Service Worker](https://mswjs.io/) to intercept requests at the network level. Do not mock TanStack Query hooks or the fetch client directly.
+
+```tsx
+// containers/UserList/__tests__/UserListContainer.test.tsx
+import { http, HttpResponse } from 'msw';
+import { setupServer } from 'msw/node';
+import { render, screen } from '@testing-library/react';
+import { createWrapper } from '@/test/utils'; // QueryClient + any providers
+import { UserListContainer } from '..';
+
+const server = setupServer(
+  http.get('/api/users', () =>
+    HttpResponse.json([{ id: '1', name: 'Alice' }])
+  )
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+it('renders users returned by the API', async () => {
+  render(
+    <UserListContainer
+      workspaceId="ws-1"
+      renderUser={(id) => <span key={id}>{id}</span>}
+    />,
+    { wrapper: createWrapper() }
+  );
+
+  expect(await screen.findByText('Alice')).toBeInTheDocument();
+});
+
+it('renders an error state when the request fails', async () => {
+  server.use(
+    http.get('/api/users', () => HttpResponse.error())
+  );
+
+  render(
+    <UserListContainer
+      workspaceId="ws-1"
+      renderUser={(id) => <span key={id}>{id}</span>}
+    />,
+    { wrapper: createWrapper() }
+  );
+
+  expect(await screen.findByText('Something went wrong.')).toBeInTheDocument();
+});
+```
+
+Each test file sets up its own `setupServer`. Override specific handlers per test with `server.use()` — use this to cover error states and edge cases without duplicating the happy-path handler.
+
 ## Views and Routing
 
 See [views.md](./views.md).
