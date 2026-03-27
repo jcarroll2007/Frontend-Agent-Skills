@@ -14,7 +14,13 @@ Opinionated frontend patterns, conventions, and agent skills built from 15 years
 
 ## Using the Skills
 
-Copy or symlink the `skills/` directory into your project's `.claude/` folder, or reference individual skill files directly in your Claude Code session.
+Run this from the root of your project:
+
+```sh
+npx github:jcarroll2007/Frontend-Agent-Skills
+```
+
+This copies `SKILL.md` and the `rules/` folder into `.claude/skills/` in your project. Claude Code will pick them up automatically.
 
 ## Stack at a Glance
 

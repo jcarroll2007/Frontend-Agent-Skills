@@ -1,0 +1,15 @@
+{
+  "name": "frontend-agent-skills",
+  "version": "1.0.0",
+  "description": "Opinionated frontend patterns and Claude Code agent skills",
+  "bin": {
+    "frontend-agent-skills": "./install.js"
+  },
+  "files": [
+    "install.js",
+    "SKILL.md",
+    "rules/"
+  ],
+  "keywords": ["claude", "claude-code", "frontend", "react", "typescript"],
+  "license": "MIT"
+}
