@@ -11,6 +11,7 @@ A view is a page-level component and the composition root for a route. Views liv
 **Responsibilities:**
 - Extract route params and pass them as props to containers
 - Compose containers and layout components declaratively
+- Own all navigation callbacks — when a container action triggers navigation (e.g., navigating after a delete), the view passes a callback prop rather than letting the container call `useNavigate` directly
 - Own nothing else — no data fetching, no business logic, no conditional rendering beyond layout variation
 
 ```tsx
@@ -31,6 +32,49 @@ export function WorkspaceView() {
 ```
 
 A view should read like a flat list of every major piece of UI on the page. If you need to scroll past inline logic to understand what's rendered, move that logic into a container.
+
+## Navigation Ownership
+
+Views own all navigation. Containers should never call `useNavigate` directly — instead, they accept callback props (e.g., `onDeleteSuccess`, `onSaveComplete`) that the view wires to navigation. This keeps containers decoupled from routing and from other business domains.
+
+**Why this matters:** A container that navigates after an action (e.g., "navigate to the parent epic after deleting a task") implicitly depends on the route structure and often on another domain's route params. This coupling prevents the container from living inside its own context and makes it harder to reuse.
+
+**Wrong — container handles navigation:**
+
+```tsx
+// containers/TaskDetail/TaskDetailContent.tsx
+function TaskDetailContent({ epicId, taskId }: Props) {
+  const navigate = useNavigate();
+  const deleteTask = useDeleteTask();
+
+  // This container now depends on epics (epicId) just for navigation
+  const handleDelete = () => {
+    deleteTask.mutate(taskId, {
+      onSuccess: () => navigate({ to: '/epics/$epicId', params: { epicId } }),
+    });
+  };
+  // ...
+}
+```
+
+**Correct — view owns navigation via callback:**
+
+```tsx
+// views/epics/$epicId/tasks/$taskId/index.tsx
+export function TaskDetailView() {
+  const { epicId, taskId } = useParams();
+  const navigate = useNavigate();
+
+  return (
+    <TaskDetailContainer
+      taskId={taskId}
+      onDeleteSuccess={() => navigate({ to: '/epics/$epicId', params: { epicId } })}
+    />
+  );
+}
+```
+
+The container only knows about tasks. The view — which already has the route context — handles where to go next.
 
 ## What Does Not Belong in a View
 

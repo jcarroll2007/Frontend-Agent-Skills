@@ -13,7 +13,7 @@ All applications use a `contexts/` directory to organize code by business domain
 ```
 src/
 ├── components/      # Presentational, reusable UI — no business logic
-├── containers/      # Stateful wrappers that orchestrate cross-domain composition
+├── containers/      # Cross-domain containers only — most containers belong inside their context
 ├── views/           # Page-level components; compose containers, components, and contexts
 ├── hooks/           # Shared hooks not owned by any single domain
 ├── lib/             # Utilities and internal libraries
@@ -134,5 +134,25 @@ Ask one question: does this code serve **one** business domain, or does it **orc
 - **Multiple domains** → it belongs in `src/containers/`, `src/views/`, or `src/hooks/`.
 
 If the answer is ambiguous, the code is probably doing too much. Split it.
+
+## Where Containers Belong
+
+**Default: inside their context.** Most containers can be made single-domain by accepting callbacks and cross-domain data as props instead of importing other contexts or calling `useNavigate` directly. When a container only imports from its own context, it lives in `contexts/<domain>/containers/` and is exported through the barrel.
+
+**`src/containers/` is the exception, not the default.** Only place a container at the top level when it genuinely orchestrates multiple contexts and cannot be decoupled through props. Before putting a container in `src/containers/`, ask: can I make this single-domain by accepting a callback or a prop? If yes, keep it in the context.
+
+**Example — keeping a container in its context:**
+
+A task detail container that navigates after delete seems to need the epics context (for the redirect target). But the navigation is the view's job:
+
+```tsx
+// contexts/tasks/containers/TaskDetail — single-domain, no epic dependency
+<TaskDetailContainer
+  taskId={taskId}
+  onDeleteSuccess={() => navigate({ to: '/epics/$epicId', params: { epicId } })}
+/>
+```
+
+The view passes the callback; the container stays in `contexts/tasks/`.
 
 For full details on containers and views, see `patterns/containers.md` and `patterns/views.md`.

@@ -107,6 +107,8 @@ A container always fetches its own data — never receives already-fetched data 
 
 Child containers are never imported directly inside a content component — they are passed in as render props. This keeps each container single-purposed and makes composition explicit at the call site.
 
+**Navigation belongs to views, not containers.** A content component should never call `useNavigate` directly. When an action triggers navigation (e.g., redirect after delete or create), accept a callback prop (`onDeleteSuccess`, `onSaveComplete`) and let the view wire it to navigation. This keeps the container decoupled from routing and from other domains — and usually means it can live inside its own context rather than at the top-level `src/containers/`.
+
 ## Presentation Component
 
 Lives in `components/`, not inside the container directory. Accepts data via props, renders pure UI, and manages only local UI state (toggles, modals). No data fetching, no route dependencies.
