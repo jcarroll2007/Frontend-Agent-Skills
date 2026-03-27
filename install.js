@@ -6,15 +6,15 @@ const path = require('path');
 const src = __dirname;
 const dest = process.cwd();
 
-const skillsDest = path.join(dest, '.claude', 'skills');
-const rulesDest = path.join(skillsDest, 'rules');
+const pkgDest = path.join(dest, '.claude', 'skills', 'frontend-agent-skills');
+const rulesDest = path.join(pkgDest, 'rules');
 
 fs.mkdirSync(rulesDest, { recursive: true });
 
 // Install SKILL.md
 fs.copyFileSync(
   path.join(src, 'SKILL.md'),
-  path.join(skillsDest, 'frontend-agent-skills.md')
+  path.join(pkgDest, 'SKILL.md')
 );
 
 // Install rules/
@@ -27,4 +27,4 @@ for (const file of fs.readdirSync(path.join(src, 'rules'))) {
   }
 }
 
-console.log('Installed frontend-agent-skills to .claude/skills/');
+console.log('Installed frontend-agent-skills to .claude/skills/frontend-agent-skills/');
