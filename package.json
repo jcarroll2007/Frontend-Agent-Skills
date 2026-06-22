@@ -1,15 +1,7 @@
 {
   "name": "frontend-agent-skills",
-  "version": "1.0.0",
-  "description": "Opinionated frontend patterns and Claude Code agent skills",
-  "bin": {
-    "frontend-agent-skills": "./install.js"
-  },
-  "files": [
-    "install.js",
-    "SKILL.md",
-    "rules/"
-  ],
-  "keywords": ["claude", "claude-code", "frontend", "react", "typescript"],
+  "version": "2.0.0",
+  "description": "Opinionated frontend patterns and Claude Code agent skills, installable via `npx skills`",
+  "keywords": ["claude", "claude-code", "agent-skills", "skills", "frontend", "react", "typescript"],
   "license": "MIT"
 }

@@ -6,21 +6,26 @@ Opinionated frontend patterns, conventions, and agent skills built from 15 years
 
 | Directory | Purpose |
 |---|---|
-| `skills/` | Claude Code slash commands — executable workflows |
-| `patterns/` | Implementation patterns with clear recommendations |
+| `skills/frontend-agent-skills/` | The installable agent skill — `SKILL.md` plus its `rules/` |
 | `decisions/` | Architecture Decision Records explaining library choices |
-| `conventions/` | Concrete rules for naming, structure, and process |
-| `stack/` | Opinionated tech stack definitions |
 
-## Using the Skills
+## Installing the Skill
 
-Run this from the root of your project:
+This repo is a [`npx skills`](https://github.com/vercel-labs/skills) source. Run from the root of your project:
 
 ```sh
-npx github:jcarroll2007/Frontend-Agent-Skills
+npx skills add jcarroll2007/Frontend-Agent-Skills
 ```
 
-This copies `SKILL.md` and the `rules/` folder into `.claude/skills/` in your project. Claude Code will pick them up automatically.
+Target a specific agent with `-a` (e.g. Claude Code):
+
+```sh
+npx skills add jcarroll2007/Frontend-Agent-Skills -a claude-code
+```
+
+This copies the `frontend-agent-skills` skill (its `SKILL.md` and `rules/`) into your agent's skills directory — for Claude Code that's `.claude/skills/frontend-agent-skills/`. The agent picks it up automatically.
+
+Update later with `npx skills update`, and list installed skills with `npx skills list`.
 
 ## Stack at a Glance
 
